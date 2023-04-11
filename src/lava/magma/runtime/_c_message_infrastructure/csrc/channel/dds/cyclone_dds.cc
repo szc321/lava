@@ -204,6 +204,9 @@ MetaDataPtr CycloneDDSSubscriber::Recv(bool keep) {
   return nullptr;
 }
 
+bool CycloneDDSSubscriber::Probe() {
+  return ((selector_->read()).length() > 0);
+}
 void CycloneDDSSubscriber::Stop() {
   if (stop_)
     return;

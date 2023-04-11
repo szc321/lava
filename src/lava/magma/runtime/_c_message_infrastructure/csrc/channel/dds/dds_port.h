@@ -64,7 +64,7 @@ class DDSRecvPort final : public AbstractRecvPort {
     return subscriber_->Recv(true);
   }
   bool Probe() {
-    return false;
+    return subscriber_->Probe();
   }
 
  private:

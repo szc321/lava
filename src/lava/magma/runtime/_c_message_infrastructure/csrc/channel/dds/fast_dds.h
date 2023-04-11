@@ -109,7 +109,7 @@ class FastDDSSubscriber final : public DDSSubscriber {
   DDSInitErrorType Init();
   void Stop();
   MetaDataPtr Recv(bool keep);
-
+  bool Probe();
  private:
   void InitParticipant();
   void InitDataReader();

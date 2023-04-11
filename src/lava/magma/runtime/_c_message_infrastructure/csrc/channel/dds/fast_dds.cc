@@ -298,6 +298,12 @@ MetaDataPtr FastDDSSubscriber::Recv(bool keep) {
   return nullptr;
 }
 
+bool FastDDSSubscriber::Probe(){
+  FASTDDS_CONST_SEQUENCE(MDataSeq, ddsmetadata::msg::DDSMetaData);
+  MDataSeq mdata_seq;
+  SampleInfoSeq infos;
+  return (ReturnCode_t::RETCODE_OK == reader_->read(mdata_seq, infos, 1));
+}
 void FastDDSSubscriber::Stop() {
   LAVA_DEBUG(LOG_DDS, "Subscriber Stop and release\n");
   bool valid = true;
