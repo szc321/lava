@@ -110,6 +110,7 @@ class FastDDSSubscriber final : public DDSSubscriber {
   void Stop();
   MetaDataPtr Recv(bool keep);
   bool Probe();
+
  private:
   void InitParticipant();
   void InitDataReader();

@@ -298,7 +298,7 @@ MetaDataPtr FastDDSSubscriber::Recv(bool keep) {
   return nullptr;
 }
 
-bool FastDDSSubscriber::Probe(){
+bool FastDDSSubscriber::Probe() {
   FASTDDS_CONST_SEQUENCE(MDataSeq, ddsmetadata::msg::DDSMetaData);
   MDataSeq mdata_seq;
   SampleInfoSeq infos;
