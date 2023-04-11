@@ -32,6 +32,10 @@ class DDSChannel : public AbstractChannel {
   DDSSendPortPtr send_port_ = nullptr;
   DDSRecvPortPtr recv_port_ = nullptr;
 };
+
+std::shared_ptr<DDSChannel> GetDefaultDDSChannel(const std::string &topic_name,
+                                                 const size_t &size);
+
 }  // namespace message_infrastructure
 
 #endif  // CHANNEL_DDS_DDS_CHANNEL_H_

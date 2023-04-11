@@ -110,18 +110,25 @@ class MultiProcessing(MessageInfrastructureInterface):
         self.stop()
         return 0
 
-    def channel(self, channel_type: ChannelType, src_name, dst_name,
-                shape, dtype, size, sync=False) -> Channel:
+    def channel(self,
+                channel_type: ChannelType,
+                channel_backend,
+                src_name,
+                dst_name,
+                shape,
+                dtype,
+                size,
+                sync=False) -> Channel:
         if channel_type == ChannelType.PyPy:
             channel_bytes = np.prod(shape) * np.dtype(dtype).itemsize \
                 if not sync else SyncChannelBytes
-            return Channel(ChannelBackend.SHMEMCHANNEL, ChannelQueueSize,
+            return Channel(channel_backend.value, ChannelQueueSize,
                            channel_bytes, src_name, dst_name, shape, dtype)
         elif channel_type == ChannelType.PyC or channel_type == ChannelType.CPy:
             temp_dtype = LavaTypeTransfer.cdtype2numpy(dtype)
             channel_bytes = np.prod(shape) * np.dtype(temp_dtype).itemsize \
                 if not sync else SyncChannelBytes
-            return Channel(ChannelBackend.SHMEMCHANNEL, size,
+            return Channel(channel_backend.value, size,
                            channel_bytes, src_name, dst_name, shape, dtype)
         else:
             raise Exception(f"Unsupported channel type {channel_type}")

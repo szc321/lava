@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: LGPL 2.1 or later
 # See: https://spdx.org/licenses/
 import typing as ty
+
+from lava.magma.compiler.channels.channel_backend import ChannelBackend
+
 if ty.TYPE_CHECKING:
     from lava.magma.core.process.process import AbstractProcess
     from lava.magma.compiler.builders.py_builder import PyProcessBuilder
@@ -147,7 +150,9 @@ class MultiProcessing(MessageInfrastructureInterface):
         else:
             raise Exception(f"Unsupported channel type {channel_type}")
 
-    def channel(self, channel_type: ChannelType, src_name, dst_name,
+    def channel(self, channel_type: ChannelType,
+                channel_backend: ChannelBackend,
+                src_name, dst_name,
                 shape, dtype, size, sync=False) -> Channel:
         channel_class = self.channel_class(channel_type)
         return channel_class(self, src_name, dst_name, shape, dtype, size)

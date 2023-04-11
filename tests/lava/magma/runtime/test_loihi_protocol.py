@@ -4,6 +4,7 @@
 
 import unittest
 
+from lava.magma.compiler.channels.channel_backend import ChannelBackend
 from lava.magma.core.decorator import implements, requires
 from lava.magma.core.model.py.type import LavaPyType
 from lava.magma.core.process.process import AbstractProcess
@@ -61,8 +62,15 @@ class TestProcess(unittest.TestCase):
         process = SimpleProcess(shape=(2, 2))
         simple_sync_domain = SyncDomain("simple", LoihiProtocol(), [process])
         run_config = SimpleRunConfig(sync_domains=[simple_sync_domain])
-        process.run(condition=RunSteps(num_steps=10), run_cfg=run_config)
-        process.run(condition=RunSteps(num_steps=5), run_cfg=run_config)
+        # This does not work
+        # process.run(condition=RunSteps(num_steps=1), run_cfg=run_config,
+        #             compile_config={"channel_backend": ChannelBackend.SOCKET})
+        # This works
+        # process.run(condition=RunSteps(num_steps=1), run_cfg=run_config,
+        #             compile_config={"channel_backend": ChannelBackend.SHMEM})
+        # This seg faults
+        process.run(condition=RunSteps(num_steps=1), run_cfg=run_config,
+                    compile_config={"channel_backend": ChannelBackend.DDS})
         process.stop()
 
 

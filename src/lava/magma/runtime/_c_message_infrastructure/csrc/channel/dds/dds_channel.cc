@@ -29,4 +29,17 @@ AbstractSendPortPtr DDSChannel::GetSendPort() {
 AbstractRecvPortPtr DDSChannel::GetRecvPort() {
   return recv_port_;
 }
+
+std::shared_ptr<DDSChannel> GetDefaultDDSChannel(const std::string &topic_name,
+                                                 const size_t &size) {
+  DDSBackendType BackendType = DDSBackendType::FASTDDSBackend;
+  #if defined(CycloneDDS_ENABLE)
+    DDSBackendType BackendType = DDSBackendType::CycloneDDSBackend;
+  #endif
+  return std::make_shared<DDSChannel>(topic_name,
+                                      DDSTransportType::DDSTCPv6 ,
+                                      BackendType,
+                                      size);
+}
+
 }  // namespace message_infrastructure

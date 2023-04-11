@@ -130,6 +130,7 @@ class ChannelBuildersFactory:
                     dst_port.process,
                     src_pt_init,
                     dst_pt_init,
+                    compile_config["channel_backend"]
                 )
                 channel_builders.append(channel_builder)
                 # Create additional channel builder for every VarPort
@@ -142,6 +143,7 @@ class ChannelBuildersFactory:
                         src_port.process,
                         dst_pt_init,
                         src_pt_init,
+                        compile_config["channel_backend"]
                     )
                     channel_builders.append(rv_chb)
         return channel_builders

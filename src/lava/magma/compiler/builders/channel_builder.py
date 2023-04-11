@@ -10,6 +10,7 @@ from lava.magma.compiler.builders.interfaces import \
     AbstractProcessModel
 from lava.magma.compiler.builders. \
     runtimeservice_builder import RuntimeServiceBuilder
+from lava.magma.compiler.channels.channel_backend import ChannelBackend
 from lava.magma.runtime.message_infrastructure import (
     Channel,
 )
@@ -33,6 +34,7 @@ class ChannelBuilderMp(AbstractChannelBuilder):
     dst_process: "AbstractProcess"
     src_port_initializer: PortInitializer
     dst_port_initializer: PortInitializer
+    channel_backend: ChannelBackend
 
     def build(
             self, messaging_infrastructure: MessageInfrastructureInterface
@@ -54,6 +56,7 @@ class ChannelBuilderMp(AbstractChannelBuilder):
             Can't build channel of type specified
         """
         return messaging_infrastructure.channel(self.channel_type,
+                                                self.channel_backend,
                                                 self.src_port_initializer.name,
                                                 self.dst_port_initializer.name,
                                                 self.src_port_initializer.shape,
@@ -73,6 +76,7 @@ class ServiceChannelBuilderMp(AbstractChannelBuilder):
     dst_process: ty.Union[RuntimeServiceBuilder,
                           ty.Type["AbstractProcessModel"]]
     port_initializer: PortInitializer
+    channel_backend: ChannelBackend
 
     def build(
             self, messaging_infrastructure: MessageInfrastructureInterface
@@ -95,6 +99,7 @@ class ServiceChannelBuilderMp(AbstractChannelBuilder):
         """
         channel_name: str = self.port_initializer.name
         return messaging_infrastructure.channel(self.channel_type,
+                                                self.channel_backend,
                                                 channel_name + "_src",
                                                 channel_name + "_dst",
                                                 self.port_initializer.shape,
@@ -113,6 +118,7 @@ class RuntimeChannelBuilderMp(AbstractChannelBuilder):
     src_process: ty.Union[RuntimeServiceBuilder, ty.Type["Runtime"]]
     dst_process: ty.Union[RuntimeServiceBuilder, ty.Type["Runtime"]]
     port_initializer: PortInitializer
+    channel_backend: ChannelBackend
 
     def build(
             self, messaging_infrastructure: MessageInfrastructureInterface
@@ -135,6 +141,7 @@ class RuntimeChannelBuilderMp(AbstractChannelBuilder):
         """
         channel_name: str = self.port_initializer.name
         return messaging_infrastructure.channel(self.channel_type,
+                                                self.channel_backend,
                                                 channel_name + "_src",
                                                 channel_name + "_dst",
                                                 self.port_initializer.shape,
@@ -154,6 +161,7 @@ class ChannelBuilderNx(AbstractChannelBuilder):
     dst_process: "AbstractProcess"
     src_port_initializer: PortInitializer
     dst_port_initializer: PortInitializer
+    channel_backend: ChannelBackend = None
 
     def build(
             self, messaging_infrastructure: MessageInfrastructureInterface

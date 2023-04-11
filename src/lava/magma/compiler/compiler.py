@@ -11,6 +11,7 @@ import lava.magma.compiler.var_model as var_model
 import numpy as np
 from lava.magma.compiler.builders.interfaces import (AbstractChannelBuilder,
                                                      AbstractProcessBuilder)
+from lava.magma.compiler.channels.channel_backend import ChannelBackend
 
 try:
     from lava.magma.compiler.builders.c_builder import CProcessBuilder
@@ -97,6 +98,11 @@ class Compiler:
         self._compile_config = compile_config or {}
         self._compile_config.setdefault("loihi_gen", "oheogulch")
         self._compile_config.setdefault("pypy_channel_size", 64)
+        from lava.magma.runtime.message_infrastructure import \
+            PURE_PYTHON_VERSION
+        default_backend = ChannelBackend.PYSHMEM if PURE_PYTHON_VERSION == 1 \
+            else ChannelBackend.SHMEM
+        self._compile_config.setdefault("channel_backend", default_backend)
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.StreamHandler())
         self.log.setLevel(loglevel)
@@ -156,7 +162,7 @@ class Compiler:
             channel_map, compile_config=self._compile_config
         )
         sync_channel_builders = self._create_sync_channel_builders(
-            runtime_service_builders
+            runtime_service_builders, compile_config=self._compile_config
         )
 
         # Package all Builders and NodeConfigs into an Executable.
@@ -734,7 +740,9 @@ class Compiler:
         )
 
     def _create_sync_channel_builders(
-        self, rsb: ty.Dict[SyncDomain, RuntimeServiceBuilder]
+            self,
+            rsb: ty.Dict[SyncDomain, RuntimeServiceBuilder],
+            compile_config: ty.Optional[ty.Dict[str, ty.Any]] = None
     ) -> ty.Iterable[AbstractChannelBuilder]:
         sync_channel_builders: ty.List[AbstractChannelBuilder] = []
         for sync_domain in rsb:
@@ -745,6 +753,7 @@ class Compiler:
                 self._create_mgmt_port_initializer(
                     f"runtime_to_service_" f"{sync_domain.name}"
                 ),
+                compile_config["channel_backend"]
             )
             sync_channel_builders.append(runtime_to_service)
 
@@ -755,6 +764,7 @@ class Compiler:
                 self._create_mgmt_port_initializer(
                     f"service_to_runtime_" f"{sync_domain.name}"
                 ),
+                compile_config["channel_backend"]
             )
             sync_channel_builders.append(service_to_runtime)
 
@@ -767,6 +777,7 @@ class Compiler:
                         self._create_mgmt_port_initializer(
                             f"service_to_process_" f"{process.id}"
                         ),
+                        compile_config["channel_backend"]
                     )
                     sync_channel_builders.append(service_to_process)
 
@@ -777,6 +788,7 @@ class Compiler:
                         self._create_mgmt_port_initializer(
                             f"process_to_service_" f"{process.id}"
                         ),
+                        compile_config["channel_backend"]
                     )
                     sync_channel_builders.append(process_to_service)
         return sync_channel_builders

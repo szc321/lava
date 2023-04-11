@@ -22,8 +22,10 @@ AbstractChannelPtr ChannelFactory::GetChannel(const ChannelType &channel_type,
                                               const std::string &src_name,
                                               const std::string &dst_name) {
   switch (channel_type) {
+#if defined(DDS_CHANNEL)
     case ChannelType::DDSCHANNEL:
-      break;
+      return GetDefaultDDSChannel(src_name+dst_name+"topic", size);
+#endif
     case ChannelType::SOCKETCHANNEL:
       return GetSocketChannel(nbytes, src_name, dst_name);
     default:

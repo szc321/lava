@@ -4,6 +4,8 @@
 
 import typing as ty
 from abc import ABC, abstractmethod
+
+from lava.magma.compiler.channels.channel_backend import ChannelBackend
 from lava.magma.runtime.message_infrastructure import Channel
 from lava.magma.runtime.message_infrastructure.interfaces import ChannelType
 
@@ -55,7 +57,9 @@ class MessageInfrastructureInterface(ABC):
         pass
 
     @abstractmethod
-    def channel(self, channel_type: ChannelType, src_name, dst_name,
+    def channel(self, channel_type: ChannelType,
+                channel_backend: ChannelBackend, src_name,
+                dst_name,
                 shape, dtype, size, sync=False) -> Channel:
         """Given the Channel Type, Return the Channel Implementation to
         be used during execution"""
