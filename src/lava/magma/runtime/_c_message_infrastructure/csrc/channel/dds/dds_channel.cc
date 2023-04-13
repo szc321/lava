@@ -40,7 +40,7 @@ std::shared_ptr<DDSChannel> GetDefaultDDSChannel(const size_t &nbytes,
                                                  const std::string &dst_name) {
   DDSBackendType BackendType = DDSBackendType::FASTDDSBackend;
   #if defined(CycloneDDS_ENABLE)
-    DDSBackendType BackendType = DDSBackendType::CycloneDDSBackend;
+    BackendType = DDSBackendType::CycloneDDSBackend;
   #endif
   LAVA_LOG_ERR("GetDefaultDDSChannel function====\n");
   return std::make_shared<DDSChannel>(src_name,
