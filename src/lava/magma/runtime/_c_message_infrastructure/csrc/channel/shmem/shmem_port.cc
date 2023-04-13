@@ -114,6 +114,7 @@ void ShmemRecvPort::QueueRecv() {
 }
 
 bool ShmemRecvPort::Probe() {
+  LAVA_LOG_ERR("ShmemRecvPort::Probe() ===\n");
   return recv_queue_->Probe();
 }
 
@@ -170,6 +171,7 @@ MetaDataPtr ShmemBlockRecvPort::Peek() {
 }
 
 bool ShmemBlockRecvPort::Probe() {
+  LAVA_LOG_ERR("ShmemBlockRecvPort::Probe() ===\n");
   return shm_->TryProbe();
 }
 

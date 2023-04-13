@@ -168,10 +168,12 @@ MetaDataPtr CycloneDDSSubscriber::Recv(bool keep) {
   LAVA_DEBUG(LOG_DDS, "CycloneDDS recving...\n");
   dds::sub::LoanedSamples<ddsmetadata::msg::DDSMetaData> samples;
   if (keep) {
+    LAVA_LOG_ERR(" CycloneDDSSubscriber::Recv keep\n");
     while ((samples = selector_->read()).length() <= 0) {
       helper::Sleep();
     }
   } else {
+    LAVA_LOG_ERR(" CycloneDDSSubscriber::Recv\n");
     while ((samples = selector_->take()).length() <= 0) {
       helper::Sleep();
     }
