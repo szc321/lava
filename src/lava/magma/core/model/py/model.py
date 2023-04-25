@@ -25,8 +25,7 @@ from lava.magma.runtime.mgmt_token_enums import (
     MGMT_RESPONSE,
 )
 from lava.magma.core.sync.protocols.async_protocol import AsyncProtocol
-
-
+import os
 class AbstractPyProcessModel(AbstractProcessModel, ABC):
     """Abstract interface for Python ProcessModels.
 
@@ -101,6 +100,7 @@ class AbstractPyProcessModel(AbstractProcessModel, ABC):
         self.process_to_service.send(MGMT_RESPONSE.TERMINATED)
         self._stopped = True
         self.join()
+        
 
     def _pause(self):
         """
@@ -257,7 +257,9 @@ class AbstractPyProcessModel(AbstractProcessModel, ABC):
                 self._handle_var_port(self._action)
             self._channel_actions = [(self.service_to_process, lambda: "cmd")]
             self.add_ports_for_polling()
+            # start_time = datetime.now()
             self._action = self._selector.select(*self._channel_actions)
+            # end_time =datetime.now()
 
     @abstractmethod
     def add_ports_for_polling(self):
@@ -274,6 +276,8 @@ class AbstractPyProcessModel(AbstractProcessModel, ABC):
         self.process_to_service.join()
         for p in self.py_ports:
             p.join()
+
+        print(f'model pid is {self.implements_process}, model_all_time===={self._selector.get_all_time()},model_count ={self._selector.get_count()}')
 
     def on_var_update(self):
         """This method is called if a Var is updated. It
@@ -520,9 +524,9 @@ class PyLoihiProcessModel(AbstractPyProcessModel):
         Add various ports to poll for communication on ports
         """
         if (
-            enum_equal(self.phase, PyLoihiProcessModel.Phase.PRE_MGMT)
-            or enum_equal(self.phase, PyLoihiProcessModel.Phase.POST_MGMT)
-            or enum_equal(self.phase, PyLoihiProcessModel.Phase.HOST)
+            (self.phase[0]==2)
+            or (self.phase[0]==4)
+            or (self.phase[0]==5)
         ):
             for var_port in self.var_ports:
                 for csp_port in var_port.csp_ports:
@@ -598,6 +602,7 @@ class PyAsyncProcessModel(AbstractPyProcessModel):
         """
         if self.service_to_process.probe():
             cmd = self.service_to_process.peek()
+            
             if enum_equal(cmd, MGMT_COMMAND.STOP):
                 self.service_to_process.recv()
                 self._stop()

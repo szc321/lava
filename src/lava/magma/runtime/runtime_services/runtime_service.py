@@ -48,8 +48,8 @@ PyRuntimeService: (Abstract Class) Coordinates process models executing on
     b. AsyncPyRuntimeService: Coordinates process models executing on
        the CPU and written in Python and following the AsyncProtocol.
 """
-
-
+import os
+from datetime import datetime
 class PyRuntimeService(AbstractRuntimeService):
     """Abstract RuntimeService for Python, it provides base methods
     for start and run. It is not meant to instantiated directly
@@ -91,6 +91,8 @@ class PyRuntimeService(AbstractRuntimeService):
         for i in range(len(self.service_to_process)):
             self.service_to_process[i].join()
             self.process_to_service[i].join()
+        print(f'service pid is {os.getpid()}, service_all_time===={self.selector.get_all_time()},service_count ={self.selector.get_count()} ')
+        
 
     def _relay_to_runtime_data_given_model_id(self, model_id: int):
         """Relays data received from ProcessModel given by model id  to the
@@ -176,6 +178,7 @@ class LoihiPyRuntimeService(PyRuntimeService):
         self._error = False
         self.pausing = False
         self.stopping = False
+        self.selector = Selector()
 
     class Phase:
         SPK = enum_to_np(1)
@@ -352,14 +355,14 @@ class LoihiPyRuntimeService(PyRuntimeService):
         In this case iterate through the phases of the Loihi protocol until the
         last time step is reached. The runtime is informed after the last time
         step. The loop ends when receiving the STOP command from the runtime."""
-        selector = Selector()
+        
         phase = LoihiPhase.HOST
 
         channel_actions = [(self.runtime_to_service, lambda: "cmd")]
 
         while True:
-            # Probe if there is a new command from the runtime
-            action = selector.select(*channel_actions)
+
+            action = self.selector.select(*channel_actions)
             if action == "cmd":
                 command = self.runtime_to_service.recv()
                 if enum_equal(command, MGMT_COMMAND.STOP):

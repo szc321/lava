@@ -85,7 +85,6 @@ Process Models communicate with each other via channels defined by
 InVar/OutVar/RefVar ports.
 """
 
-
 def target_fn(*args, **kwargs):
     """
     Function to build and attach a system process to
@@ -103,15 +102,15 @@ def target_fn(*args, **kwargs):
         print("Traceback: ")
         print(traceback.format_exc())
         raise e
-
-
+import os
 class Runtime:
     """Lava runtime which consumes an executable and run
     run_condition. Exposes
     the APIs to start, pause, stop and wait on an execution. Execution could
     be blocking and non-blocking as specified by the run
     run_condition."""
-
+    
+    
     def __init__(self,
                  exe: Executable,
                  message_infrastructure_type: ActorType,
@@ -137,6 +136,7 @@ class Runtime:
         """On destruction, terminate Runtime automatically to
         free compute resources.
         """
+        print(f'runtime pid is {os.getpid()}, runtime_all_time===={self.selector.get_all_time()},runtime_count ={self.selector.get_count()} ') 
         if self._is_started:
             self.stop()
 
@@ -147,6 +147,7 @@ class Runtime:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Stop the runtime when exiting "with" block of a context manager."""
+        print(f'runtime pid is {os.getpid()}, runtime_all_time===={self.selector.get_all_time()},runtime_count ={self.selector.get_count()} ') 
         self.stop()
 
     def initialize(self, node_cfg_idx: int = 0):
@@ -159,7 +160,7 @@ class Runtime:
         self._start_ports()
         self.log.debug("Runtime Initialization Complete")
         self._is_initialized = True
-
+        self.selector = Selector()
     def _start_ports(self):
         """Start the ports of the runtime to communicate with runtime
         services"""
@@ -188,13 +189,18 @@ class Runtime:
     def _build_channels(self):
         """Given the channel builders for an executable,
         build these channels"""
+        # print("-----_build_channels----")
         if self._executable.channel_builders:
             for channel_builder in self._executable.channel_builders:
+                # print("==============channel_build_for=======")
                 if isinstance(channel_builder, ChannelBuilderMp):
                     channel = channel_builder.build(
                         self._messaging_infrastructure
                     )
-
+                    # print("_build_channels- src_process--", channel_builder.src_process.name)
+                    # print("_build_channels- dst_process--", channel_builder.dst_process.name)
+                    # print("==============channel.src_port",channel.src_port.name)
+                    # print("==============channel.dst_port",channel.dst_port.name)
                     self._get_process_builder_for_process(
                         channel_builder.src_process).set_csp_ports(
                         [channel.src_port])
@@ -213,6 +219,7 @@ class Runtime:
     def _build_sync_channels(self):
         """Builds the channels needed for synchronization between runtime
         components"""
+        # print("------_build_sync_channels----------")
         if self._executable.sync_channel_builders:
             for sync_channel_builder in self._executable.sync_channel_builders:
                 channel: Channel = sync_channel_builder.build(
@@ -223,9 +230,11 @@ class Runtime:
                                   RuntimeServiceBuilder):
                         sync_channel_builder.src_process.set_csp_ports(
                             [channel.src_port])
+                        # print("sync_channel_builder = RuntimeChannelBuilderMp channel.src_port==", channel.src_port)
                     else:
                         sync_channel_builder.dst_process.set_csp_ports(
                             [channel.dst_port])
+                        # print("sync_channel_builder = XXXX channel.dst_port==", channel.dst_port)
                     if "runtime_to_service" in channel.src_port.name:
                         self.runtime_to_service.append(channel.src_port)
                     elif "service_to_runtime" in channel.src_port.name:
@@ -275,13 +284,14 @@ class Runtime:
         Gets response from RuntimeServices
         """
         if self._is_running:
-            selector = Selector()
+            
             # Poll on all responses
             channel_actions = [(recv_port, (lambda y: (lambda: y))(
                 recv_port)) for recv_port in self.service_to_runtime]
             rsps = []
+
             while True:
-                recv_port = selector.select(*channel_actions)
+                recv_port = self.selector.select(*channel_actions)
                 if recv_port is None:
                     continue
                 data = recv_port.recv()
@@ -384,6 +394,7 @@ class Runtime:
 
     def stop(self):
         """Stops an ongoing or paused run."""
+        print(f'runtime pid is {os.getpid()}, runtime_all_time===={self.selector.get_all_time()},runtime_count ={self.selector.get_count()} ')  
         try:
             if self._is_started:
                 for send_port in self.runtime_to_service:

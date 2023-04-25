@@ -101,7 +101,11 @@ class SendPort(AbstractSendPort):
     def _ack_callback(self):
         try:
             while not self._done:
+                from datetime import datetime
+                # start_time = datetime.now()
                 self._ack.acquire()
+                # end_time = datetime.now()
+                # print("sem waiting time = ", (end_time-start_time))
                 not_full = self.probe()
                 self._semaphore.release()
                 if self.observer and not not_full:
@@ -125,7 +129,11 @@ class SendPort(AbstractSendPort):
         """
         if data.shape != self._shape:
             raise AssertionError(f"{data.shape=} {self._shape=} Mismatch")
+        from datetime import datetime
+        start_time = datetime.now()
         self._semaphore.acquire()
+        end_time = datetime.now()
+        # print("===============acquire time =========", end_time- start_time)
         self._array[self._idx][:] = data[:]
         self._idx = (self._idx + 1) % self._size
         self._req.release()
@@ -200,6 +208,8 @@ class RecvPort(AbstractRecvPort):
         self._queue = None
         self.observer = None
         self.thread = None
+        self.probe_count = 0
+        self.recv_count = 0
 
     @property
     def name(self) -> str:
@@ -242,6 +252,7 @@ class RecvPort(AbstractRecvPort):
     def _req_callback(self):
         try:
             while not self._done:
+                self.probe_count = self.probe_count + 1
                 self._req.acquire()
                 not_empty = self.probe()
                 self._queue.put_nowait(0)
@@ -274,22 +285,29 @@ class RecvPort(AbstractRecvPort):
         result = self._array[self._idx].copy()
         self._idx = (self._idx + 1) % self._size
         self._ack.release()
-
+        self.recv_count = self.recv_count + 1
         return result
 
     def join(self):
+        # print(f"self.recv_count ====={self.recv_count}, self.probe_count = {self.probe_count}")
         self._done = True
 
+import datetime
+import os
 
 class CspSelector:
     """
     Utility class to allow waiting for multiple channels to become ready
     """
-
     def __init__(self):
         """Instantiates CspSelector object and class attributes"""
         self._cv = Condition()
-
+        self.all_time = datetime.timedelta(seconds=0)
+        self.count = 0
+    def get_all_time(self):
+        return self.all_time.total_seconds()
+    def get_count(self):
+        return self.count
     def _changed(self):
         with self._cv:
             self._cv.notify_all()
@@ -311,10 +329,14 @@ class CspSelector:
         with self._cv:
             self._set_observer(args, self._changed)
             while True:
+                start_time = datetime.datetime.now()
                 for channel, action in args:
                     if channel.probe():
                         self._set_observer(args, None)
                         return action()
+                end_time = datetime.datetime.now()
+                self.count = self.count + 1
+                self.all_time = self.all_time + end_time - start_time
                 self._cv.wait()
 
 

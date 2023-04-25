@@ -16,9 +16,7 @@
 #include <cstdlib>
 
 namespace message_infrastructure {
-
 namespace {
-
 void MetaDataPtrFromPointer(const MetaDataPtr &ptr, void *p, int nbytes) {
   std::memcpy(ptr.get(), p, sizeof(MetaData));
   int len = ptr->elsize * ptr->total_size;
@@ -99,12 +97,16 @@ void ShmemRecvPort::QueueRecv() {
   while (!done_.load()) {
     bool ret = false;
     if (this->recv_queue_->AvailableCount() > 0) {
+      // const clock_t start = std::clock();
       ret = shm_->Load([this](void* data){
         MetaDataPtr metadata_res = std::make_shared<MetaData>();
         MetaDataPtrFromPointer(metadata_res, data,
                                nbytes_ - sizeof(MetaData));
         this->recv_queue_->Push(metadata_res);
       });
+      // const clock_t end = std::clock();
+      // LAVA_LOG_ERR("ShmemRecvPort::QueueRecv shm_Load time ========: %f\n",
+      //     ((end - start)/static_cast<double>(CLOCKS_PER_SEC/1000)));
     }
     if (!ret) {
       // sleep
@@ -116,7 +118,6 @@ void ShmemRecvPort::QueueRecv() {
 bool ShmemRecvPort::Probe() {
   return recv_queue_->Probe();
 }
-
 MetaDataPtr ShmemRecvPort::Recv() {
   return recv_queue_->Pop(true);
 }
@@ -153,10 +154,15 @@ ShmemBlockRecvPort::ShmemBlockRecvPort(const std::string &name,
 
 MetaDataPtr ShmemBlockRecvPort::Recv() {
   MetaDataPtr metadata_res = std::make_shared<MetaData>();
+  const clock_t start = std::clock();
   shm_->BlockLoad([&metadata_res, this](void* data){
+    const clock_t start = std::clock();
     MetaDataPtrFromPointer(metadata_res, data,
                            nbytes_ - sizeof(MetaData));
   });
+  const clock_t end = std::clock();
+  // LAVA_LOG_ERR("ShmemBlockRecvPort::Recv shm_->BlockLoad time ========: %f\n",
+  //         ((end - start)/static_cast<double>(CLOCKS_PER_SEC/1000)));
   return metadata_res;
 }
 

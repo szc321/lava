@@ -18,18 +18,29 @@ from lava.magma.runtime.message_infrastructure.MessageInfrastructurePywrapper \
 import numpy as np
 import typing as ty
 import warnings
-
+import datetime
 
 class Selector:
+    def __init__(self):
+        self.all_time = datetime.timedelta(seconds=0)
+        self.count = 0
+    def get_all_time(self):
+        return self.all_time.total_seconds()
+    def get_count(self):
+        return self.count
     def select(
             self,
             *args: ty.Tuple[RecvPort, ty.Callable[[], ty.Any]],
     ):
-        for recv_port, action in args:
-            if recv_port.probe():
-                return action()
-        return None
-
+        while True:
+            start_time = datetime.datetime.now()
+            for recv_port, action in args:
+                if recv_port.probe():
+                    return action()
+            end_time = datetime.datetime.now()
+            self.count = self.count + 1
+            self.all_time = self.all_time + end_time - start_time
+        # return None
 
 class SendPort(AbstractTransferPort):
     def __init__(self, send_port):
@@ -97,7 +108,6 @@ if support_fastdds_channel() or support_cyclonedds_channel():
         @property
         def src_port(self):
             return SendPort(super().src_port)
-
 
 class Channel(CppChannel):
 

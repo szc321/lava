@@ -32,7 +32,11 @@ void SharedMemory::Start() {
 }
 
 void SharedMemory::Store(HandleFn store_fn) {
+  // const clock_t start = std::clock();
   sem_wait(ack_);
+  // const clock_t end = std::clock();
+  // LAVA_LOG_ERR("sem_wait time ========: %f\n",
+  //         ((end - start)/static_cast<double>(CLOCKS_PER_SEC/1000)));
   store_fn(data_);
   sem_post(req_);
 }
@@ -40,8 +44,12 @@ void SharedMemory::Store(HandleFn store_fn) {
 bool SharedMemory::Load(HandleFn consume_fn) {
   bool ret = false;
   if (!sem_trywait(req_)) {
+    // const clock_t start = std::clock();
     consume_fn(data_);
+    // const clock_t end = std::clock();
     sem_post(ack_);
+  // LAVA_LOG_ERR("Load time ========: %f\n",
+  //         ((end - start)/static_cast<double>(CLOCKS_PER_SEC/1000)));
     ret = true;
   }
   return ret;

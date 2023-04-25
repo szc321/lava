@@ -76,16 +76,17 @@ else:
 
     from lava.magma.runtime.message_infrastructure. \
         MessageInfrastructurePywrapper import (  # noqa  # nosec
-            RecvPort,  # noqa  # nosec
+             # noqa  # nosec
             AbstractTransferPort,  # noqa  # nosec
             support_grpc_channel,
             support_fastdds_channel,
             support_cyclonedds_channel)
 
-    ChannelQueueSize = 1
+    ChannelQueueSize = 128
     SyncChannelBytes = 128
 
     from .ports import (  # noqa  # nosec
+        RecvPort, 
         SendPort,  # noqa  # nosec
         Channel,  # noqa  # nosec
         Selector,  # noqa  # nosec
