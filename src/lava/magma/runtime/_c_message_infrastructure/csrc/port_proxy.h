@@ -8,7 +8,12 @@
 #include <core/abstract_port.h>
 #include <core/utils.h>
 #include <pybind11/pybind11.h>
-
+#include <chrono>
+#include <condition_variable>
+#include <tuple>
+#include <variant>
+#include <utility>
+#include <mutex>
 #include <memory>
 #include <string>
 #include <vector>
@@ -73,6 +78,7 @@ class RecvPortProxy : public PortProxy {
   py::object Peek();
   std::string Name();
   size_t Size();
+ void add_observer(std::function<void()> observer);
 
  private:
   py::object MDataToObject_(MetaDataPtr metadata);
@@ -86,6 +92,55 @@ using SendPortProxyPtr = std::shared_ptr<SendPortProxy>;
 using RecvPortProxyPtr = std::shared_ptr<RecvPortProxy>;
 using SendPortProxyList = std::vector<SendPortProxyPtr>;
 using RecvPortProxyList = std::vector<RecvPortProxyPtr>;
+
+
+class Selector {
+ private:
+  std::condition_variable cv;
+  mutable std::mutex cv_mutex;
+  // std::chrono::seconds all_time;
+  // int count;
+
+ public:
+  void _changed() {
+      std::unique_lock<std::mutex> lock(cv_mutex);
+      cv.notify_all();
+  }
+
+  void _set_observer(std::vector<std::pair<RecvPortProxy,
+                     void(*)()>>&channel_actions,
+              std::function<void()> observer) {
+      for (auto& channel_action : channel_actions) {
+          channel_action.first.add_observer(observer);
+      }
+  }
+
+  // template<typename... Args>
+  auto select(std::vector<std::pair<RecvPortProxy, void(*)()>> channel_actions) {
+    // std::vector<std::pair<RecvPortProxy, std::function<void()>>>\
+    //         channel_actions = { std::make_pair(std::forward<Args>(args))... };
+    std::function<void()> observer = std::bind(&Selector::_changed, this);
+    std::unique_lock<std::mutex> lock(cv_mutex);
+    _set_observer(channel_actions, observer);
+      while (true) {
+          // auto start_time = std::chrono::high_resolution_clock::now();
+          for (auto& channel_action : channel_actions) {
+              if (channel_action.first.Probe()) {
+                  _set_observer(channel_actions, nullptr);
+                  auto result = channel_action.second;
+                  // auto end_time = std::chrono::high_resolution_clock::now();
+                  // count++;
+                  // all_time += (end_time - start_time);
+                  return result;
+              }
+          }
+          // auto end_time = std::chrono::high_resolution_clock::now();
+          // count++;
+          // all_time += (end_time - start_time);
+          cv.wait(lock);
+      }
+    }
+};
 
 }  // namespace message_infrastructure
 

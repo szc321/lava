@@ -98,6 +98,11 @@ PYBIND11_MODULE(MessageInfrastructurePywrapper, m) {
                                        py::return_value_policy::reference)
     .def_property_readonly("dst_port", &ChannelProxy::GetRecvPort,
                                        py::return_value_policy::reference);
+
+  py::class_<Selector, std::shared_ptr<Selector>> (m, "Selector")
+    .def(py::init<>())
+    .def("select", &Selector::select);
+
   py::class_<TempChannelProxy, std::shared_ptr<TempChannelProxy>>
       (m, "TempChannel")
     .def(py::init<std::string>())

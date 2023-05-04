@@ -210,6 +210,7 @@ class RecvPort(AbstractRecvPort):
         self.thread = None
         self.probe_count = 0
         self.recv_count = 0
+        
 
     @property
     def name(self) -> str:

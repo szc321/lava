@@ -78,6 +78,8 @@ class ShmemRecvPort final : public AbstractRecvPort {
   std::atomic_bool done_;
   std::shared_ptr<RecvQueue<MetaDataPtr>> recv_queue_;
   std::thread recv_queue_thread_;
+  // std::thread req_callback_thread_;
+  // void* Req_callback();
 };
 
 // Users should be allowed to copy port objects.

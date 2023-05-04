@@ -81,14 +81,18 @@ ShmemRecvPort::ShmemRecvPort(const std::string &name,
                 SharedMemoryPtr shm,
                 const size_t &size,
                 const size_t &nbytes)
-  : AbstractRecvPort(name, size, nbytes), shm_(shm), done_(false) {
+  : AbstractRecvPort(name, size, nbytes), shm_(shm),
+                     done_(false) {
   recv_queue_ = std::make_shared<RecvQueue<MetaDataPtr>>(name_, size_);
+  observer = nullptr;
 }
 
 ShmemRecvPort::~ShmemRecvPort() {
 }
 
 void ShmemRecvPort::Start() {
+  // req_callback_thread_ = std::thread(
+  //   &message_infrastructure::ShmemRecvPort::Req_callback, this);
   recv_queue_thread_ = std::thread(
     &message_infrastructure::ShmemRecvPort::QueueRecv, this);
 }
@@ -98,11 +102,15 @@ void ShmemRecvPort::QueueRecv() {
     bool ret = false;
     if (this->recv_queue_->AvailableCount() > 0) {
       // const clock_t start = std::clock();
-      ret = shm_->Load([this](void* data){
+      bool not_empty = recv_queue_->Probe();
+      ret = shm_->Load([this, &not_empty](void* data){
         MetaDataPtr metadata_res = std::make_shared<MetaData>();
         MetaDataPtrFromPointer(metadata_res, data,
                                nbytes_ - sizeof(MetaData));
         this->recv_queue_->Push(metadata_res);
+        if (observer && !not_empty) {
+            observer();
+        }
       });
       // const clock_t end = std::clock();
       // LAVA_LOG_ERR("ShmemRecvPort::QueueRecv shm_Load time ========: %f\n",
@@ -118,9 +126,19 @@ void ShmemRecvPort::QueueRecv() {
 bool ShmemRecvPort::Probe() {
   return recv_queue_->Probe();
 }
+// void* ShmemRecvPort::Req_callback() {
+//     while (done_) {
+//         bool not_empty = recv_queue_->Empty();
+//         if (observer && !not_empty) {
+//             observer();
+//         }
+//     }
+//     return nullptr;
+// }
 MetaDataPtr ShmemRecvPort::Recv() {
   return recv_queue_->Pop(true);
 }
+
 
 void ShmemRecvPort::Join() {
   if (!done_) {
