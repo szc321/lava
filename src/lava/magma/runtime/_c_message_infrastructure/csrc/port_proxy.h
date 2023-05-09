@@ -107,16 +107,16 @@ class Selector {
       cv.notify_all();
   }
 
-  void _set_observer(std::vector<std::pair<RecvPortProxy,
-                     void(*)()>>&channel_actions,
-              std::function<void()> observer) {
+  void _set_observer(py::args channel_actions, std::function<void()> observer) {
       for (auto& channel_action : channel_actions) {
-          channel_action.first.add_observer(observer);
+          RecvPortProxy port = channel_action[0].cast<RecvPortProxy>();
+          // std::function<py::object()> callback = channel_actions[1].cast<std::function<py::object()>>();
+          port.add_observer(observer);
       }
   }
 
   // template<typename... Args>
-  auto select(std::vector<std::pair<RecvPortProxy, void(*)()>> channel_actions) {
+  auto select(py::args channel_actions) {
     // std::vector<std::pair<RecvPortProxy, std::function<void()>>>\
     //         channel_actions = { std::make_pair(std::forward<Args>(args))... };
     std::function<void()> observer = std::bind(&Selector::_changed, this);
@@ -125,9 +125,10 @@ class Selector {
       while (true) {
           // auto start_time = std::chrono::high_resolution_clock::now();
           for (auto& channel_action : channel_actions) {
-              if (channel_action.first.Probe()) {
+              RecvPortProxy port = channel_action[0].cast<RecvPortProxy>();
+              if (port.Probe()) {
                   _set_observer(channel_actions, nullptr);
-                  auto result = channel_action.second;
+                  py::function result = channel_actions[1].cast<py::function>();
                   // auto end_time = std::chrono::high_resolution_clock::now();
                   // count++;
                   // all_time += (end_time - start_time);
