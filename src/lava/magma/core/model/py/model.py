@@ -274,6 +274,7 @@ class AbstractPyProcessModel(AbstractProcessModel, ABC):
         self.process_to_service.join()
         for p in self.py_ports:
             p.join()
+        print(f'model pid is {self.implements_process}, model_all_time===={self._selector.get_all_time()},model_count ={self._selector.get_count()}')
 
     def on_var_update(self):
         """This method is called if a Var is updated. It

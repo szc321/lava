@@ -290,7 +290,7 @@ class RecvPort(AbstractRecvPort):
             self._ack = None
             self._req = None
 
-
+import datetime
 class CspSelector:
     """
     Utility class to allow waiting for multiple channels to become ready
@@ -299,7 +299,12 @@ class CspSelector:
     def __init__(self):
         """Instantiates CspSelector object and class attributes"""
         self._cv = Condition()
-
+        self.all_time = datetime.timedelta(seconds=0)
+        self.count = 0
+    def get_all_time(self):
+        return self.all_time.total_seconds()
+    def get_count(self):
+        return self.count
     def _changed(self):
         with self._cv:
             self._cv.notify_all()
@@ -321,10 +326,14 @@ class CspSelector:
         with self._cv:
             self._set_observer(args, self._changed)
             while True:
+                start_time = datetime.datetime.now()
                 for channel, action in args:
                     if channel.probe():
                         self._set_observer(args, None)
                         return action()
+                end_time = datetime.datetime.now()
+                self.count = self.count + 1
+                self.all_time = self.all_time + end_time - start_time
                 self._cv.wait()
 
 

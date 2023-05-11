@@ -141,6 +141,7 @@ class Runtime:
         """
         if self._is_started:
             self.stop()
+        print(f'runtime pid is {os.getpid()}, runtime_all_time===={self.selector.get_all_time()},runtime_count ={self.selector.get_count()} ')
 
     def __enter__(self):
         """Initialize the runtime on entering "with" block of a context manager.
@@ -150,6 +151,7 @@ class Runtime:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Stop the runtime when exiting "with" block of a context manager."""
         self.stop()
+        print(f'runtime pid is {os.getpid()}, runtime_all_time===={self.selector.get_all_time()},runtime_count ={self.selector.get_count()} ')
 
     def initialize(self, node_cfg_idx: int = 0):
         """Initializes the runtime"""

@@ -40,6 +40,7 @@ void SharedMemory::Store(HandleFn store_fn) {
 bool SharedMemory::Load(HandleFn consume_fn) {
   bool ret = false;
   if (!sem_trywait(req_)) {
+    
     consume_fn(data_);
     sem_post(ack_);
     ret = true;
