@@ -46,6 +46,8 @@ from lava.magma.core.process.ports.ports import create_port_id
 from lava.magma.core.run_conditions import (AbstractRunCondition,
                                             RunContinuous, RunSteps)
 
+import datetime
+import os
 """Defines a Runtime which takes a lava executable and a pluggable message
 passing infrastructure (for instance multiprocessing+shared memory or ray in
 future), builds the components of the executable populated by the compiler
@@ -134,11 +136,13 @@ class Runtime:
         self.runtime_to_service: ty.Iterable[SendPort] = []
         self.service_to_runtime: ty.Iterable[RecvPort] = []
         self._open_ports: ty.List[AbstractTransferPort] = []
+        self.selector = Selector()
 
     def __del__(self):
         """On destruction, terminate Runtime automatically to
         free compute resources.
         """
+        
         if self._is_started:
             self.stop()
         print(f'runtime pid is {os.getpid()}, runtime_all_time===={self.selector.get_all_time()},runtime_count ={self.selector.get_count()} ')
@@ -151,6 +155,7 @@ class Runtime:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Stop the runtime when exiting "with" block of a context manager."""
         self.stop()
+        
         print(f'runtime pid is {os.getpid()}, runtime_all_time===={self.selector.get_all_time()},runtime_count ={self.selector.get_count()} ')
 
     def initialize(self, node_cfg_idx: int = 0):
@@ -286,15 +291,18 @@ class Runtime:
         Gets response from RuntimeServices
         """
         if self._is_running:
-            selector = Selector()
+            
             # Poll on all responses
             channel_actions = [(recv_port, (lambda y: (lambda: y))(
                 recv_port)) for recv_port in self.service_to_runtime]
             rsps = []
             while True:
-                recv_port = selector.select(*channel_actions)
+                start_time = datetime.datetime.now()
+                recv_port = self.selector.select(*channel_actions)
                 if recv_port is None:
                     continue
+                end_time = datetime.datetime.now()
+                print(f'ok time = ========{end_time- start_time}')
                 data = recv_port.recv()
                 rsps.append(data)
                 if enum_equal(data, MGMT_RESPONSE.REQ_PAUSE):
@@ -415,6 +423,7 @@ class Runtime:
                 # Send messages to RuntimeServices to stop as soon as possible.
             else:
                 self.log.info("Runtime not started yet.")
+            print(f'runtime pid is {os.getpid()}, runtime_all_time===={self.selector.get_all_time()},runtime_count ={self.selector.get_count()} ')
         finally:
             self._messaging_infrastructure.stop()
 

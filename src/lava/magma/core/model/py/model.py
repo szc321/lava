@@ -25,7 +25,7 @@ from lava.magma.runtime.mgmt_token_enums import (
     MGMT_RESPONSE,
 )
 from lava.magma.core.sync.protocols.async_protocol import AsyncProtocol
-
+import datetime
 
 class AbstractPyProcessModel(AbstractProcessModel, ABC):
     """Abstract interface for Python ProcessModels.
@@ -63,7 +63,8 @@ class AbstractPyProcessModel(AbstractProcessModel, ABC):
             MGMT_COMMAND.GET_DATA[0]: self._get_var,
             MGMT_COMMAND.SET_DATA[0]: self._set_var,
         }
-
+        self.time = datetime.timedelta(0)
+        
     def __setattr__(self, key: str, value: ty.Any):
         """
         Sets attribute in the object. This function is used by the builder
@@ -235,6 +236,7 @@ class AbstractPyProcessModel(AbstractProcessModel, ABC):
         is informed about completion. The loop ends when the STOP command is
         received."""
         while True:
+            time1 = datetime.datetime.now()
             if self._action == "cmd":
                 cmd = self.service_to_process.recv()[0]
                 try:
@@ -274,7 +276,7 @@ class AbstractPyProcessModel(AbstractProcessModel, ABC):
         self.process_to_service.join()
         for p in self.py_ports:
             p.join()
-        print(f'model pid is {self.implements_process}, model_all_time===={self._selector.get_all_time()},model_count ={self._selector.get_count()}')
+        print(f'model pid is {self.implements_process}, model_all_time===={self._selector.get_all_time()},model_count ={self._selector.get_count()}, time = {self.time}')
 
     def on_var_update(self):
         """This method is called if a Var is updated. It
@@ -570,7 +572,7 @@ class PyAsyncProcessModel(AbstractPyProcessModel):
         self._req_pause = False
         self._req_stop = False
         self._cmd_handlers.update({MGMT_COMMAND.RUN[0]: self._run_async})
-
+        
     class Response:
         """
         Different types of response for a RuntimeService Request
