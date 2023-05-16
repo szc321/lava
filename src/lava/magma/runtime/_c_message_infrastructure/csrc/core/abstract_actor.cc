@@ -11,7 +11,7 @@ namespace message_infrastructure {
 AbstractActor::AbstractActor(AbstractActor::TargetFn target_fn)
   : target_fn_(target_fn) {
   ctl_shm_ = GetSharedMemManagerSingleton()
-    .AllocChannelSharedMemory<SharedMemory>(sizeof(int));
+    .AllocChannelSharedMemory<SharedMemory>(sizeof(int), 1);
   ctl_shm_->Start();
 }
 

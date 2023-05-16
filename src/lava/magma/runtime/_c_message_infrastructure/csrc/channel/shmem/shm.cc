@@ -8,9 +8,10 @@ namespace message_infrastructure {
 
 SharedMemory::SharedMemory(const size_t &mem_size,
                            void* mmap,
-                           const int &key) {
+                           const int &key, const size_t &size) {
   data_ = mmap;
   size_ = mem_size;
+  esize_ = size;
   req_name_ += std::to_string(key);
   ack_name_ += std::to_string(key);
 }
@@ -40,18 +41,21 @@ void SharedMemory::Store(HandleFn store_fn) {
 bool SharedMemory::Load(HandleFn consume_fn) {
   bool ret = false;
   if (!sem_trywait(req_)) {
-    
     consume_fn(data_);
     sem_post(ack_);
     ret = true;
   }
   return ret;
 }
-
 void SharedMemory::BlockLoad(HandleFn consume_fn) {
   sem_wait(req_);
   consume_fn(data_);
   sem_post(ack_);
+}
+void SharedMemory::Peek(HandleFn consume_fn) {
+  sem_wait(req_);
+  consume_fn(data_);
+  sem_post(req_);
 }
 
 void SharedMemory::Read(HandleFn consume_fn) {

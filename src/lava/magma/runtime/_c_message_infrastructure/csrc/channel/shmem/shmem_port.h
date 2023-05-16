@@ -31,6 +31,7 @@ class ShmemSendPort final : public AbstractSendPort {
   void Send(DataPtr metadata);
   void Join();
   bool Probe();
+  int idx_;
 
  private:
   SharedMemoryPtr shm_ = nullptr;
@@ -72,12 +73,12 @@ class ShmemRecvPort final : public AbstractRecvPort {
   void Join();
   MetaDataPtr Peek();
   void QueueRecv();
+  int idx_;
 
  private:
   SharedMemoryPtr shm_ = nullptr;
   std::atomic_bool done_;
   std::shared_ptr<RecvQueue<MetaDataPtr>> recv_queue_;
-  std::thread recv_queue_thread_;
 };
 
 // Users should be allowed to copy port objects.

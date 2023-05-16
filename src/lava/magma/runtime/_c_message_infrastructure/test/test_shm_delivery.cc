@@ -34,8 +34,12 @@ void target_fn_a1_bound(
       LAVA_DUMP(LOG_UTTEST, "shm actor1 waitting\n");
       MetaDataPtr data = from_mp->Recv();
       LAVA_DUMP(LOG_UTTEST, "shm actor1 recviced\n");
+      LAVA_DUMP(LOG_UTTEST, "shm actor1 go222 ++\n");
+      LAVA_LOG_ERR("THIS VALUE = %p\n", data->mdata);
       (*reinterpret_cast<int64_t*>(data->mdata))++;
+      LAVA_DUMP(LOG_UTTEST, "shm actor1 begin send\n");
       to_a2->Send(data);
+      LAVA_DUMP(LOG_UTTEST, "shm actor1 recviced\n");
       free(data->mdata);
       data = from_a2->Recv();
       (*reinterpret_cast<int64_t*>(data->mdata))++;
@@ -69,7 +73,7 @@ void target_fn_a2_bound(
 TEST(TestShmDelivery, ShmLoop) {
   MultiProcessing mp;
   int loop = 1000;
-  const int queue_size = 1;
+  const int queue_size = 128;
   AbstractChannelPtr mp_to_a1 = GetChannelFactory().GetChannel(
                                 ChannelType::SHMEMCHANNEL,
                                 queue_size,

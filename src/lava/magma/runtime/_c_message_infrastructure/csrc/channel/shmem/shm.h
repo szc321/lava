@@ -33,7 +33,7 @@ using HandleFn = std::function<void(void *)>;
 class SharedMemory {
  public:
   SharedMemory() {}
-  SharedMemory(const size_t &mem_size, void* mmap, const int &key);
+  SharedMemory(const size_t &mem_size, void* mmap, const int &key, const size_t &esize_);
   SharedMemory(const size_t &mem_size, void* mmap);
   ~SharedMemory();
   void Start();
@@ -41,15 +41,18 @@ class SharedMemory {
   void BlockLoad(HandleFn consume_fn);
   void Read(HandleFn consume_fn);
   void Store(HandleFn store_fn);
+  void Peek(HandleFn consume_fn);
   void Close();
   bool TryProbe();
   void InitSemaphore(sem_t* req, sem_t *ack);
   int GetDataElem(int offset);
   std::string GetReq();
   std::string GetAck();
+  sem_t all_index_sem;
 
  private:
   size_t size_;
+  size_t esize_;
   std::string req_name_ = "req";
   std::string ack_name_ = "ack";
   sem_t *req_;
@@ -87,7 +90,8 @@ class SharedMemManager {
   SharedMemManager& operator=(const SharedMemManager&) = delete;
   SharedMemManager& operator=(SharedMemManager&&) = delete;
   template <typename T>
-  std::shared_ptr<T> AllocChannelSharedMemory(const size_t &mem_size) {
+  std::shared_ptr<T> AllocChannelSharedMemory(const size_t &mem_size, const size_t &size) {
+    size_t real_mem_size = mem_size*size;
     int random = std::rand();
     std::string str = shm_str_ + std::to_string(random);
     int shmfd = shm_open(str.c_str(), SHM_FLAG, SHM_MODE);
@@ -96,24 +100,24 @@ class SharedMemManager {
     if (shmfd == -1) {
       LAVA_LOG_FATAL("Create shared memory object failed.\n");
     }
-    int err = ftruncate(shmfd, mem_size);
+    int err = ftruncate(shmfd, real_mem_size);
     if (err == -1) {
       LAVA_LOG_FATAL("Resize shared memory segment failed.\n");
     }
     shm_fd_strs_.insert({shmfd, str});
-    void *mmap_address = mmap(nullptr, mem_size, PROT_READ | PROT_WRITE,
+    void *mmap_address = mmap(nullptr, real_mem_size, PROT_READ | PROT_WRITE,
                         MAP_SHARED, shmfd, 0);
     if (mmap_address == reinterpret_cast<void*>(-1)) {
       LAVA_LOG_ERR("Get shmem address error, errno: %d\n", errno);
-      LAVA_DUMP(1, "size: %ld, shmfd_: %d\n", mem_size, shmfd);
+      LAVA_DUMP(1, "size: %ld, shmfd_: %d\n", real_mem_size, shmfd);
     }
-    shm_mmap_.insert({mmap_address, mem_size});
+    shm_mmap_.insert({mmap_address, real_mem_size});
     std::shared_ptr<T> shm =
-      std::make_shared<T>(mem_size, mmap_address, random);
+      std::make_shared<T>(real_mem_size, mmap_address, random, size);
     std::string req_name = shm->GetReq();
     std::string ack_name = shm->GetAck();
     sem_t *req = sem_open(req_name.c_str(), O_CREAT, 0644, 0);
-    sem_t *ack = sem_open(ack_name.c_str(), O_CREAT, 0644, 1);
+    sem_t *ack = sem_open(ack_name.c_str(), O_CREAT, 0644, size);
     shm->InitSemaphore(req, ack);
     sem_p_strs_.insert({req, req_name});
     sem_p_strs_.insert({ack, ack_name});
