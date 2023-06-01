@@ -106,11 +106,10 @@ void ShmemRecvPort::QueueRecv() {
         MetaDataPtrFromPointer(metadata_res, data,
                                nbytes_ - sizeof(MetaData));
         this->recv_queue_->Push(metadata_res);
-        obs_lk_.lock();
+        std::lock_guard<std::mutex> lock(obs_lk_);
         if (observer_ && !not_empty) {
           observer_();
         }
-        obs_lk_.unlock();
       });
     }
     if (!ret) {

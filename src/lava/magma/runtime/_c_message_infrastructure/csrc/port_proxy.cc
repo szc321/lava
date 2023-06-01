@@ -168,12 +168,11 @@ size_t RecvPortProxy::Size() {
 }
 
 void RecvPortProxy::SetObserver(std::function<void()> obs) {
-  recv_port_->obs_lk_.lock();
+  std::lock_guard<std::mutex> lock(recv_port_->obs_lk_);
   if (obs)
     recv_port_->observer_ = obs;
   else
     recv_port_->observer_ = nullptr;
-  recv_port_->obs_lk_.unlock();
 }
 
 int trick() {
