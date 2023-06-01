@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # See: https://spdx.org/licenses/
 
-from lava.magma.runtime.message_infrastructure import ChannelQueueSize, CPPSelector
+from lava.magma.runtime.message_infrastructure \
+    import ChannelQueueSize, CPPSelector
 from lava.magma.runtime.message_infrastructure.MessageInfrastructurePywrapper \
     import Channel as CppChannel
 from lava.magma.runtime.message_infrastructure.MessageInfrastructurePywrapper \
