@@ -20,11 +20,17 @@ from lava.magma.runtime.message_infrastructure.MessageInfrastructurePywrapper \
 import numpy as np
 import typing as ty
 import warnings
-
+import time
 
 class Selector(CPPSelector):
     def select(self, *args: ty.Tuple[RecvPort, ty.Callable[[], ty.Any]]):
-        return super().select(args, SelectorSleepNs)
+        SelectorSleepS = SelectorSleepNs/1e9
+        while True:
+            res = super().select(args, SelectorSleepNs)
+            if res:
+                return res
+            time.sleep(SelectorSleepS)
+        # return super().select(args, SelectorSleepNs)
 
 
 class SendPort(AbstractTransferPort):
